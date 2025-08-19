@@ -1,0 +1,124 @@
+# src/conversation/smart_assistant.py
+import json
+import re
+from typing import Dict, Optional
+
+class SmartAssistant:
+    def __init__(self, llm_engine):
+        self.llm_engine = llm_engine
+        self.conversation_history = []
+        
+        # Optimized system prompt for GPT-OSS:20B with CadQuery 2.5.2 capabilities
+        self.system_prompt = """You are a friendly 3D design assistant. Have natural conversations about what people want to build.
+
+CONVERSATION STYLE:
+- Ask 1-2 focused questions maximum per response
+- Be conversational, not interrogative
+- Build on what they tell you naturally
+- Don't info-dump or list many questions
+- Keep responses concise and helpful
+
+WHEN TO GENERATE:
+When user says "generate", "create it", "make it", "build it" or seems ready, respond with:
+
+GENERATE_MODEL: {"object_type":"detailed_description", "width":80, "height":60, "depth":70, "requirements":["feature1","feature2"], "notes":"specific details"}
+
+Then provide CadQuery 2.5.2 code:
+
+```python
+import cadquery as cq
+
+# Your design code here using CadQuery 2.5.2 features
+width = 80
+result = cq.Workplane("XY").box(width, depth, height)
+# Add features, fillets, etc.
+```
+
+EXAMPLE CONVERSATION:
+User: "I need a phone stand"
+You: "Great! What phone do you have, and do you mainly use it landscape or portrait?"
+
+User: "iPhone 15, mostly landscape for videos"  
+You: "Perfect! Do you need charging access while it's docked?"
+
+User: "Yes definitely"
+You: "Sounds good! I'll create a landscape iPhone stand with charging access. Ready to generate it?"
+
+User: "Yes!"
+You: GENERATE_MODEL: {...} + code
+
+Stay natural and conversational - don't overwhelm with questions!"""
+    
+    def chat(self, user_message: str) -> Dict:
+        """Process user message with GPT-OSS:20B"""
+        
+        # Add to conversation history
+        self.conversation_history.append(f"User: {user_message}")
+        
+        # Build context (keep last 10 exchanges for memory efficiency)
+        history_text = "\n".join(self.conversation_history[-10:])
+        
+        # Create prompt for GPT-OSS
+        prompt = f"{self.system_prompt}\n\nConversation:\n{history_text}\n\nAssistant:"
+        
+        # Generate response with GPT-OSS:20B
+        ai_response = self.llm_engine.generate_response(prompt)
+        
+        # Add AI response to history
+        self.conversation_history.append(f"Assistant: {ai_response}")
+        
+        # Parse response for generation request and code
+        model_spec = self._extract_generation_request(ai_response)
+        cadquery_code = self._extract_cadquery_code(ai_response)
+        
+        return {
+            'message': ai_response,
+            'generate_model': model_spec is not None,
+            'model_spec': model_spec,
+            'cadquery_code': cadquery_code
+        }
+    
+    def _extract_generation_request(self, response: str) -> Optional[Dict]:
+        """Extract JSON specification from GPT-OSS response"""
+        patterns = [
+            r'GENERATE_MODEL:\s*(\{.*?\})',
+            r'GENERATE_MODEL:\s*({[^}]+})',
+            r'GENERATE_MODEL:\s*(\{[\s\S]*?\})'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, response, re.DOTALL)
+            if match:
+                try:
+                    spec_text = match.group(1).strip()
+                    # Clean up common formatting issues
+                    spec_text = spec_text.replace("'", '"')
+                    spec_text = re.sub(r'(\w+):', r'"\1":', spec_text)
+                    
+                    spec = json.loads(spec_text)
+                    if 'object_type' in spec:
+                        return spec
+                except json.JSONDecodeError:
+                    continue
+        
+        return None
+    
+    def _extract_cadquery_code(self, response: str) -> Optional[str]:
+        """Extract CadQuery code from GPT-OSS response"""
+        patterns = [
+            r'```python\n(.*?)\n```',
+            r'```\n(.*?)\n```'
+        ]
+        
+        for pattern in patterns:
+            match = re.search(pattern, response, re.DOTALL)
+            if match:
+                code = match.group(1).strip()
+                if 'import cadquery' in code or 'cq.Workplane' in code:
+                    return code
+        
+        return None
+    
+    def reset_conversation(self):
+        """Reset conversation history"""
+        self.conversation_history = []

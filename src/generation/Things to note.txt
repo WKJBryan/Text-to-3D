@@ -1,0 +1,29 @@
+## If you want the highest possible confidence
+
+1. **Provide explicit parameters**: e.g., “Create a 10 mm × 10 mm square with a 2 mm fillet on each corner, then extrude 5 mm.”  
+2. **Include sketches or diagrams** (even a rough text diagram).  
+3. **State performance constraints**: e.g., required wall thickness, whether the part will undergo 3‑D printing or CNC machining.  
+4. **List any known design constraints**: “No feature smaller than 0.8 mm,” “keep the part under 100 mm long,” etc.  
+5. **Ask for incremental checks**: e.g., “Show me a list of dimensions before I run the script.”
+
+## Why the confidence isn’t 100 %
+
+| **Common Source of Uncertainty** | **Mitigation** |
+|----------------------------------|----------------|
+| **Ambiguity in the prompt** | Ask for concrete dimensions, sketch sketches, or a diagram. |
+| **Missing imports / environment issues** | I’ll include a minimal boilerplate header (`import cadquery as cq`), but final execution depends on         
+the user’s CadQuery installation. |
+| **Edge‑case geometries** | CadQuery’s kernel may fail silently or produce self‑intersections; visual inspection is recommended. |
+| **User’s version of CadQuery** | Syntax changed slightly between v0.2.x and v2.x. I’ll default to v2.0+ but can adjust. |
+
+| **Task Feature** | **Typical Confidence** | **Why** |
+|------------------|------------------------|---------|
+| Basic 2‑D sketch → extrude/lathes | 95 % | CadQuery’s primitives are simple and deterministic. |
+| Adding fillets/shells on simple faces | 92 % | Straightforward API calls (`fillet()`, `shell()`). |
+| Boolean operations on solid meshes | 88 % | Works well, but failure can occur with self‑intersecting geometry. |
+| Loft or sweep between multiple profiles | 85 % | Slightly more complex, but CadQuery provides `loft()` and `sweep()`. |
+| Creating parameterised families (e.g., size, offset) | 90 % | Parameterised definitions are clear and repeatable. |
+| Multi‑component assembly (joints, gear trains) | 80 % | Complexity rises with inter‑piece constraints. |
+| Design‑for‑manufacturing specifics (e.g., minimum wall thickness, CNC tool paths) | 75 % | Needs fine‑tuning and sometimes custom extensions. |
+| Translating a highly‑technical spec with no examples | 60 % | Requires interpretation that may miss details. |
+
