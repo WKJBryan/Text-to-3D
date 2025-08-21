@@ -1,0 +1,19 @@
+[project]
+name = "ai-trim"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "cadquery>=2.5.2",
+    "cadquery-ocp>=7.7.2",
+    "customtkinter>=5.2.2",
+    "faiss-cpu>=1.11.0.post1",
+    "numpy>=2.3.2",
+    "python-dotenv>=1.1.1",
+    "requests>=2.32.4",
+    "scikit-image>=0.25.2",
+    "scipy>=1.16.1",
+    "sentence-transformers>=5.1.0",
+    "trimesh>=4.7.1",
+]
