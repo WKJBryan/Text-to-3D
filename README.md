@@ -45,7 +45,7 @@ Bot: "For your cup, what radius (default 40mm) and height (default 90mm)? Want a
 
 ## 📋 Prerequisites
 
-- Python 3.8+
+- Python 3.11
 - [Ollama](https://ollama.ai/) installed and running
 - CUDA-capable GPU (optional, for faster inference)
 - 8GB+ RAM recommended
@@ -54,8 +54,8 @@ Bot: "For your cup, what radius (default 40mm) and height (default 90mm)? Want a
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/enhanced-rag-manufacturing.git
-cd enhanced-rag-manufacturing
+git clone https://github.com/WKJBryan/Text-to-3D.git
+cd Text-to-3D
 ```
 
 2. **Create virtual environment**
@@ -321,7 +321,7 @@ MIT License - See LICENSE file for details
 
 - **Issues**: GitHub Issues
 - **Discussions**: GitHub Discussions
-- **Email**: support@example.com
+- **Email**: bryan_wang@mymail.sutd.edu.sg
 
 ## 🔮 Future Roadmap
 
