@@ -9,8 +9,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from src.llm_engine import LLMEngine
-from src.assistant import IntelligentConversationAssistant
-from src.generation.RAG_generator import EnhancedRAGCADGenerator
+# from src.assistant import IntelligentConversationAssistant
+# from src.generation.RAG_generator import EnhancedRAGCADGenerator
+from src.assistant_copy import IntelligentConversationAssistant
+from src.generation.RAG_generator_copy import EnhancedRAGCADGenerator
 from src.generation.export import ModelExporter
 
 # Load environment variables
@@ -109,6 +111,10 @@ class EnhancedDesktopApp:
         
         if hasattr(self, 'generator'):
             self.generator.set_rag_enabled(rag_enabled)
+
+        # Also notify assistant about RAG availability
+        if hasattr(self, 'assistant'):
+            self.assistant.rag_generator = self.generator if rag_enabled else None
         
         # Update visual indicators
         if rag_enabled:
@@ -134,8 +140,8 @@ class EnhancedDesktopApp:
             llm_engine = LLMEngine(model_name, performance_mode)
             
             # Initialize Enhanced components
-            self.assistant = IntelligentConversationAssistant(llm_engine)
             self.generator = EnhancedRAGCADGenerator(llm_engine)
+            self.assistant = IntelligentConversationAssistant(llm_engine, self.generator)  # Pass generator!
             self.exporter = ModelExporter(os.getenv('EXPORT_DIRECTORY', './exports'))
             
             #Set initial RAG state from toggle
