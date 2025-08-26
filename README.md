@@ -308,7 +308,7 @@ Contributions are welcome! Areas for improvement:
 
 ## 📄 License
 
-MIT License - See LICENSE file for details
+GNU AFFERO GENERAL PUBLIC LICENSE Version 3 - See LICENSE file for details
 
 ## 🙏 Acknowledgments
 
