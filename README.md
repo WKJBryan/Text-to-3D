@@ -303,12 +303,12 @@ Contributions are welcome! Areas for improvement:
 - Additional reference examples
 - Support for more CAD formats
 - Multi-language support
-- Cloud deployment options
+- Slicer support
 - Web interface
 
 ## 📄 License
 
-GNU AFFERO GENERAL PUBLIC LICENSE Version 3 - See LICENSE file for details
+GPL Version 3 - See LICENSE file for details
 
 ## 🙏 Acknowledgments
 
