@@ -308,7 +308,7 @@ Contributions are welcome! Areas for improvement:
 
 ## 📄 License
 
-GPL Version 3 - See LICENSE file for details
+GPL-3.0 - See LICENSE file for details
 
 ## 🙏 Acknowledgments
 
