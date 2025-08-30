@@ -20,7 +20,7 @@ class ModelExporter:
     def _init_printing_components(self):
         """Initialize 3D printing components (optional)"""
         try:
-            from src.printing.prusaslicer_interface import PrusaSlicerInterface
+            from src.printing.slicer_interface import PrusaSlicerInterface
             from src.printing.mainsail_client import MainsailClient
             
             self.slicer = PrusaSlicerInterface()
@@ -446,3 +446,4 @@ def export_for_printing(filename_base="model"):
         
         if deleted_count > 0:
             print(f"🧹 Cleaned up {deleted_count} old export files")
+
