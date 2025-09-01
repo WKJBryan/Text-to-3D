@@ -1,4 +1,4 @@
-# 🚀 Enhanced RAG + Intelligent AI Manufacturing Pipeline
+# Text-to-3d via CadQuery
 
 An advanced AI-powered 3D CAD generation system that combines Retrieval-Augmented Generation (RAG) with intelligent reasoning to create CadQuery models through natural conversation.
 
