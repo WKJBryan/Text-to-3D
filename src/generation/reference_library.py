@@ -37,46 +37,59 @@ class EnhancedRAGReferenceLibrary:
         return {
             # LEVEL 1: SIMPLE GEOMETRIC PRIMITIVES
             "simple_container": {
-                "description": "Basic rectangular box with rounded edges and wall thickness",
+                "description": "Basic rectangular container with wall thickness",
                 "complexity": "simple",
                 "category": "primitive",
                 "code": """import cadquery as cq
 
-# Simple container with rounded edges
+# Simple container
 length = 90
 width = 90
 height = 8
-rounded_corner = 8
+wall_thickness = 2
 
 try:
-    # Create container with rounded corners
+    # Create container
     result = (cq.Workplane("XY")
              .box(length, width, height)
              # Create opening
              .faces("+Z")
-             # Rounding corners
-             .shell(rounded_corner)
+             # Wall Thickness
+             .shell(-wall_thickness)
              )
 
 except Exception:
-    result = cq.Workplane("XY").box(width, depth, height)"""
+    result = cq.Workplane("XY").box(length, width, height)"""
             },
             
-            "simple_cylinder": {
-                "description": "Basic cylinder with smooth walls",
+            "circular_coaster": {
+                "description": "Basic circular coaster",
                 "complexity": "simple", 
                 "category": "primitive",
                 "code": """import cadquery as cq
 
-# Simple cylinder
-diameter = 80
-height = 30
+# basic circular coaster
+radius = 80
+height = 1.5
+rim_depth = 3
+rim_inset = 3
 
 try:
-    # Create cylinder
-    result = (cq.Workplane("XY")
-             .cylinder(height,diameter/2)
-             )
+    # Create base
+    coaster = (cq.Workplane("XY")
+            .cylinder(height,radius)
+            )
+            
+    #create rim
+    rim = (
+        cq.Workplane("XY")
+        .workplane(offset=height-1)
+        .circle(radius)
+        .circle(radius - rim_inset*2)
+        .extrude(rim_depth)
+        )
+
+    result = coaster.union(rim)
 
 except Exception:
     result = (cq.Workplane("XY")
@@ -104,44 +117,73 @@ except Exception:
              .extrude(height))"""
             },
 
-            "simple_rectangular_coaster": {
-                "description": "Simple rectangular coaster with decorative center pattern",
+            "Cup": {
+                "description": "Conical shaped cup",
+                "complexity": "simple", 
+                "category": "primitive",
+                "code": """import cadquery as cq
+
+# Conical cup
+bottom_radius = 40
+top_radius = 45
+height = 65
+wall_thickness = 3
+rounded_edge = (wall_thickness * 0.9) / 2
+
+try:
+    # Create conical-shaped cup
+    result = (cq.Workplane("XY")
+            .add(cq.Solid.makeCone(bottom_radius, top_radius, height))
+            .faces(">Z")
+            .shell(-wall_thickness)
+            .edges()
+            .fillet(rounded_edge))
+
+except Exception:
+    result = (cq.Workplane("XY")
+            .add(cq.Solid.makeCone(bottom_radius, top_radius, height))
+            .faces(">Z")
+            .shell(-wall_thickness)
+            )"""
+            },
+
+            "simple_cone": {
+                "description": "Rectangular base with conical top",
                 "complexity": "simple",
                 "category": "primitive",
                 "code": """import cadquery as cq
 
-# Simple rectangular coaster with decorative center pattern
-width = 90
-height = 90
-thickness = 8
-corner_radius = 8
-rim_depth = 4
-rim_inset = 5
-center_decoration_radius = 20
-decoration_depth = 1
+# Rectangular base with conical top
+length = 215
+base_height = 40
+base_cone = 100
+height = 300
+thickness = 10
 
 try:
-    # Create rectangular coaster with decorative center pattern
-    result = (cq.Workplane("XY")
-                .box(width, height, thickness)
-                .edges("|Z")
-                .fillet(corner_radius)
-                # Create rim
+    # Rectangular base with conical top
+    result = (cq.Workplane("front")
+                .box(length, length, base_height)
                 .faces(">Z")
-                .workplane()
-                .rect(width - rim_inset*2, height - rim_inset*2)
-                .cutBlind(-rim_depth)
-                .edges("|Z")
-                .fillet(corner_radius/4)
-                # Add decorative center pattern
-                .faces(">Z")
-                .workplane(offset=-rim_depth)
-                .circle(center_decoration_radius)
-                .cutBlind(-decoration_depth)
-                )
+                .circle(base_cone)
+                .workplane(offset=height)
+                .circle(base_cone / 4)
+                .loft(combine=True)
+                .faces(">Z or <Z")
+                .shell(-thickness)
+                .edges("|Z or |X or |Y")
+                .fillet(2))
 
 except Exception:
-    result = cq.Workplane("XY").box(width, depth, height)"""
+    result = (cq.Workplane("front")
+                .box(length, length, base_height)
+                .faces(">Z")
+                .circle(base_cone)
+                .workplane(offset=height)
+                .circle(base_cone / 4)
+                .loft(combine=True)
+                .faces(">Z or <Z")
+                .shell(-thickness))"""
             },
 
             "simple_ring": {
@@ -183,7 +225,10 @@ try:
             )
 
 except Exception:
-    result = cq.Workplane("XY").box(width, depth, height)"""
+    result = cq.Workplane("XY")(cq.Workplane("XY")
+                .circle(outer_radius)
+                .circle(inner_radius)
+                .extrude(height))"""
             },
             
             # LEVEL 2: FUNCTIONAL OBJECTS WITH CONSTRAINTS
@@ -303,55 +348,73 @@ except Exception:
                 "category": "functional",
                 "code": """import cadquery as cq
 
-# Mug
-mug_radius = 40
-mug_height = 90
+# Create mug
+radius = 40
+height = 90
 wall_thickness = 3
 rim_fillet = (wall_thickness * 0.9) / 2
+
+# Feature flags (boolean)
+have_handle = True
+center_handle = True
+
+# Feature parameters (numeric)
 handle_width = 8
-handle_height = 60
+handle_height = 45
 handle_thickness = handle_width / 2
-handle_arc_radius = 10
-handle_offset_from_top = 20
+handle_arc_radius = 15
 handle_path_width = 30 # How far the handle sticks out
 handle_path_height = 45 # Vertical distance of the handle
+
+# Conditional feature implementation
+if center_handle:
+    centered = (height - handle_height - handle_arc_radius) / 2
+else:
+    offset_from_bottom = 10  # mm from bottom
+    centered = height - handle_height - handle_arc_radius - offset_from_bottom
 
 try:
    # Mug body
     mug_body = (
         cq.Workplane("XY")
-        .circle(mug_radius)
-        .extrude(mug_height)
+        .circle(radius)
+        .extrude(height)
         .faces(">Z")
         .shell(-wall_thickness)
         .edges(">Z")
         .fillet(rim_fillet)
     )
 
-    # Handle path
-    handle_path = (
-        cq.Workplane("YZ")
-        .moveTo(mug_radius-1, mug_height - handle_offset_from_top)
-        .lineTo(mug_radius + handle_width, mug_height - handle_offset_from_top)
-        .radiusArc((mug_radius + handle_width + handle_arc_radius, mug_height - handle_offset_from_top - handle_arc_radius), handle_arc_radius)
-        .lineTo(mug_radius + handle_width + handle_arc_radius, mug_height - handle_height - handle_arc_radius) # Note the Z coordinate
-        .radiusArc((mug_radius + handle_width, mug_height - handle_height - (handle_arc_radius * 2)), handle_arc_radius)
-        .lineTo(mug_radius-1, mug_height - handle_height - (handle_arc_radius * 2))
-        .close()
-    )
+    if have_handle:
+        # Handle path
+        handle_path = (
+            cq.Workplane("YZ")
+            .moveTo(radius-1, height - centered)
+            .lineTo(radius + handle_width, height - centered)
+            .radiusArc((radius + handle_width + handle_arc_radius, height - centered - handle_arc_radius), handle_arc_radius)
+            .lineTo(radius + handle_width + handle_arc_radius, height - handle_height - handle_arc_radius) # Note the Z coordinate
+            .radiusArc((radius + handle_width, height - handle_height - (handle_arc_radius * 2)), handle_arc_radius)
+            .lineTo(radius-1, height - handle_height - (handle_arc_radius * 2))
+            .close())
 
-    handle = (handle_path.extrude(handle_width)
-            .faces(">X or <X")
-            .shell(-handle_thickness)
-            .edges()
-            .fillet(1)
-    )
-
-
-    result = mug_body.union(handle)
+        # Handle generation
+        handle = (handle_path.extrude(handle_width)
+                .faces(">X or <X")
+                .shell(-handle_thickness)
+                .edges()
+                .fillet(1))
+        result = mug_body.union(handle)
+    else:
+        result = mug_body
 
 except Exception:
-    result = cq.Workplane("XY").box(width, thickness, depth)"""
+    result = (cq.Workplane("XY")
+        .circle(radius)
+        .extrude(height)
+        .faces(">Z")
+        .shell(-wall_thickness)
+        .edges(">Z")
+        .fillet(rim_fillet))"""
             },
             
             "cable_management": {
@@ -435,7 +498,7 @@ try:
     
     # Create gear body
     gear_body = (cq.Workplane("XY")
-                .circle(outer_radius)
+                .circle(root_radius + (module / 10))
                 .extrude(thickness))
     
     # Generate involute tooth profile (simplified)
@@ -448,7 +511,7 @@ try:
     
     # Create tooth profile and pattern around gear
     angular_pitch = 360 / teeth
-    for tooth_num in range(teeth):
+    for tooth_num in range(20):
         angle = tooth_num * angular_pitch
         
         # Simplified tooth (trapezoidal approximation)
@@ -670,8 +733,7 @@ try:
             .faces(">Z")
             .workplane()
             .circle(2)
-            .cutThruAll()
-    )
+            .cutThruAll())
 
 except Exception:
     # Fallback to simple bolt
@@ -809,6 +871,73 @@ except Exception:
     result = (cq.Workplane("XY")
              .box(hinge_width, hinge_length, part_thickness)
              .faces(">Z").shell(-0.5))"""
+            },
+
+            "Lego_brick": {
+                "description": "Parametric Lego brick",
+                "complexity": "advanced", 
+                "category": "manufacturing",
+                "code": """import cadquery as cq
+
+lbumps = 8  # number of bumps long
+wbumps = 2  # number of bumps wide
+thin = True  # True for thin, False for thick
+
+# Lego Brick Constants-- these make a Lego brick a Lego
+pitch = 8.0
+clearance = 0.1
+bumpDiam = 4.8
+bumpHeight = 1.8
+if thin:
+    height = 3.2
+else:
+    height = 9.6
+
+t = (pitch - (2 * clearance) - bumpDiam) / 2.0
+postDiam = pitch - t  # works out to 6.5
+total_length = lbumps * pitch - 2.0 * clearance
+total_width = wbumps * pitch - 2.0 * clearance
+
+# make the base
+brick = cq.Workplane("XY").box(total_length, total_width, height)
+
+# shell inwards not outwards
+brick = brick.faces("<Z").shell(-1.0 * t)
+
+# make the bumps on the top
+brick = (
+    brick.faces(">Z")
+    .workplane()
+    .rarray(pitch, pitch, lbumps, wbumps, True)
+    .circle(bumpDiam / 2.0)
+    .extrude(bumpHeight)
+)
+
+# add posts on the bottom. posts are different diameter depending on geometry
+# solid studs for 1 bump, tubes for multiple, none for 1x1
+result = brick.faces("<Z").workplane(invert=True)
+
+if lbumps > 1 and wbumps > 1:
+    result = (
+        result.rarray(pitch, pitch, lbumps - 1, wbumps - 1, center=True)
+        .circle(postDiam / 2.0)
+        .circle(bumpDiam / 2.0)
+        .extrude(height - t)
+    )
+elif lbumps > 1:
+    result = (
+        result.rarray(pitch, pitch, lbumps - 1, 1, center=True)
+        .circle(t)
+        .extrude(height - t)
+    )
+elif wbumps > 1:
+    result = (
+        result.rarray(pitch, pitch, 1, wbumps - 1, center=True)
+        .circle(t)
+        .extrude(height - t)
+    )
+else:
+    result = brick"""
             },
             
             "assembly_joint": {
@@ -981,7 +1110,8 @@ except Exception:
         """Enhanced semantic search with complexity consideration"""
         if self.faiss_index is None:
             print("❌ Embeddings not initialized")
-            return [("simple_box", 1.0)]  # Fallback
+            # Return a valid fallback reference that exists
+            return [("simple_container", 0.1)]  # Low similarity to indicate fallback
         
         try:
             # Encode query
@@ -997,46 +1127,81 @@ except Exception:
             complexity_scores = {"simple": 1.0, "medium": 0.9, "complex": 0.8, "advanced": 0.7}
             
             for i, (similarity, idx) in enumerate(zip(similarities[0], indices[0])):
-                if similarity >= threshold:
+                if idx >= 0 and idx < len(self.reference_keys):  # Validate index
                     key = self.reference_keys[idx]
-                    example = self.library[key]
                     
-                    # Adjust score based on complexity appropriateness
-                    complexity_factor = complexity_scores.get(example['complexity'], 0.8)
-                    adjusted_similarity = similarity * complexity_factor
-                    
-                    results.append((key, float(adjusted_similarity)))
+                    # Verify the reference exists
+                    if key in self.library:
+                        example = self.library[key]
+                        
+                        # Adjust score based on complexity appropriateness
+                        complexity_factor = complexity_scores.get(example.get('complexity', 'medium'), 0.8)
+                        adjusted_similarity = similarity * complexity_factor
+                        
+                        if adjusted_similarity >= threshold:
+                            results.append((key, float(adjusted_similarity)))
             
             # Sort by adjusted similarity and take top_k
             results.sort(key=lambda x: x[1], reverse=True)
             results = results[:top_k]
             
-            # Ensure at least one result
+            # Ensure at least one result if we have valid indices
+            if not results and indices[0][0] >= 0 and indices[0][0] < len(self.reference_keys):
+                key = self.reference_keys[indices[0][0]]
+                if key in self.library:
+                    results = [(key, float(similarities[0][0]))]
+            
+            # Final fallback if still no results
             if not results:
-                results = [(self.reference_keys[indices[0][0]], float(similarities[0][0]))]
+                print("⚠️ No valid search results, using fallback")
+                results = [("simple_container", 0.1)]
             
             print(f"🔍 Enhanced search for '{query}': {[(r[0], f'{r[1]:.3f}') for r in results]}")
             return results
             
         except Exception as e:
             print(f"❌ Enhanced search failed: {e}")
-            return [("simple_box", 1.0)]  # Fallback
+            import traceback
+            traceback.print_exc()
+            return [("simple_container", 0.1)]  # Safe fallback
     
     def get_reference(self, key: str) -> Dict:
-        """Get reference example by key"""
-        return self.library.get(key, self.library["simple_box"])
+        """Get reference example by key with validation"""
+        if key in self.library:
+            return self.library[key]
+        else:
+            print(f"⚠️ Reference '{key}' not found, using fallback")
+            # Return the first available reference as fallback
+            if self.library:
+                fallback_key = list(self.library.keys())[0]
+                return self.library[fallback_key]
+            else:
+                # Emergency fallback structure
+                return {
+                    "description": "Fallback simple box",
+                    "complexity": "simple",
+                    "category": "primitive",
+                    "code": """import cadquery as cq
+width = 60
+height = 40
+depth = 60
+try:
+    result = cq.Workplane("XY").box(width, depth, height)
+except Exception:
+    result = cq.Workplane("XY").box(60, 60, 40)"""
+                }
     
     def get_all_references(self) -> Dict:
         """Get all reference examples"""
         return self.library
     
-    def get_by_complexity(self, complexity: str) -> Dict:
-        """Get references by complexity level"""
-        return {k: v for k, v in self.library.items() if v.get('complexity') == complexity}
+    # def get_by_complexity(self, complexity: str) -> Dict:
+    #     """Get references by complexity level"""
+    #     return {k: v for k, v in self.library.items() if v.get('complexity') == complexity}
     
-    def get_by_category(self, category: str) -> Dict:
-        """Get references by category"""
-        return {k: v for k, v in self.library.items() if v.get('category') == category}
+    # def get_by_category(self, category: str) -> Dict:
+    #     """Get references by category"""
+    #     return {k: v for k, v in self.library.items() if v.get('category') == category}
     
     def add_reference(self, key: str, description: str, code: str, complexity: str = "medium", category: str = "functional"):
         """Add new reference example with metadata"""
@@ -1050,8 +1215,18 @@ except Exception:
         print(f"✅ Added reference: {key} ({complexity}, {category})")
         print("🔄 Rebuilding enhanced embeddings...")
         self._create_embeddings()
-    
-    def rebuild_embeddings(self):
-        """Force rebuild of embeddings"""
+        
+        print(f"✅ Added reference: {key} ({complexity}, {category})")
         print("🔄 Rebuilding enhanced embeddings...")
         self._create_embeddings()
+    
+    def rebuild_embeddings(self):
+        """Force rebuild of embeddings with error handling"""
+        try:
+            print("🔄 Rebuilding enhanced embeddings...")
+            self._create_embeddings()
+            print("✅ Embeddings rebuilt successfully")
+        except Exception as e:
+            print(f"❌ Failed to rebuild embeddings: {e}")
+            import traceback
+            traceback.print_exc()
